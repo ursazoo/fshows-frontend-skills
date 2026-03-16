@@ -19,11 +19,13 @@ elif [ -f "$PROJECT_ROOT/CLAUDE.md" ] && \
 elif [ -f "$PROJECT_ROOT/package.json" ]; then
   # 从 package.json 自动生成最简 README.md
   FRAMEWORK=""
-  grep -q '"vue"' "$PROJECT_ROOT/package.json"               && FRAMEWORK="Vue"
-  grep -q '"react"' "$PROJECT_ROOT/package.json"             && FRAMEWORK="React"
-  grep -q '"@dcloudio"' "$PROJECT_ROOT/package.json"         && FRAMEWORK="uni-app"
-  grep -q '"next"' "$PROJECT_ROOT/package.json"              && FRAMEWORK="Next.js"
-  grep -q '"nuxt"' "$PROJECT_ROOT/package.json"              && FRAMEWORK="Nuxt"
+  grep -q '"@dcloudio/uni-app"' "$PROJECT_ROOT/package.json"  && FRAMEWORK="uni-app + Vue"
+  grep -q '"@tarojs/taro"' "$PROJECT_ROOT/package.json"       && FRAMEWORK="Taro + Vue"
+  grep -q '"vue"' "$PROJECT_ROOT/package.json" && [ -z "$FRAMEWORK" ] && FRAMEWORK="Vue"
+  grep -q '"nuxt"' "$PROJECT_ROOT/package.json"               && FRAMEWORK="Nuxt"
+  # 微信/支付宝原生小程序：无 package.json 框架字段，检测项目配置文件
+  [ -f "$PROJECT_ROOT/project.config.json" ] && [ -z "$FRAMEWORK" ]  && FRAMEWORK="微信原生小程序"
+  [ -f "$PROJECT_ROOT/mini.project.json" ] && [ -z "$FRAMEWORK" ]    && FRAMEWORK="支付宝原生小程序"
   [ -z "$FRAMEWORK" ] && FRAMEWORK="未知框架"
 
   LANG="JavaScript"
@@ -33,7 +35,7 @@ elif [ -f "$PROJECT_ROOT/package.json" ]; then
   grep -q '"element-plus"\|"element-ui"' "$PROJECT_ROOT/package.json" && UI_LIB=" + Element Plus"
   grep -q '"ant-design-vue"\|"antd"' "$PROJECT_ROOT/package.json"     && UI_LIB=" + Ant Design"
   grep -q '"vant"' "$PROJECT_ROOT/package.json"                       && UI_LIB=" + Vant"
-  grep -q '"naive-ui"' "$PROJECT_ROOT/package.json"                   && UI_LIB=" + Naive UI"
+  grep -q '"@nutui"' "$PROJECT_ROOT/package.json"                     && UI_LIB=" + NutUI"
 
   PROJECT_NAME=$(basename "$PROJECT_ROOT")
   cat > "$PROJECT_ROOT/README.md" << EOF
