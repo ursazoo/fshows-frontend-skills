@@ -17,13 +17,11 @@ elif [ -f "$PROJECT_ROOT/CLAUDE.md" ] && \
      grep -qi "技术栈\|vue\|react\|uni-app\|angular\|svelte\|framework\|stack" "$PROJECT_ROOT/CLAUDE.md"; then
   TECH_STACK_FILE="CLAUDE.md"
 elif [ -f "$PROJECT_ROOT/package.json" ]; then
-  # 从 package.json 自动生成最简 README.md
   FRAMEWORK=""
   grep -q '"@dcloudio/' "$PROJECT_ROOT/package.json"           && FRAMEWORK="uni-app + Vue"
   grep -q '"@tarojs/taro"' "$PROJECT_ROOT/package.json"       && FRAMEWORK="Taro + Vue"
   grep -q '"vue"' "$PROJECT_ROOT/package.json" && [ -z "$FRAMEWORK" ] && FRAMEWORK="Vue"
   grep -q '"nuxt"' "$PROJECT_ROOT/package.json"               && FRAMEWORK="Nuxt"
-  # 微信/支付宝原生小程序：无 npm 框架依赖，检测项目配置文件
   [ -f "$PROJECT_ROOT/project.config.json" ] && [ -z "$FRAMEWORK" ]  && FRAMEWORK="微信原生小程序"
   [ -f "$PROJECT_ROOT/mini.project.json" ] && [ -z "$FRAMEWORK" ]    && FRAMEWORK="支付宝原生小程序"
   [ -z "$FRAMEWORK" ] && FRAMEWORK="未知框架"
@@ -56,16 +54,28 @@ if [ -z "$TECH_STACK_FILE" ]; then
   BLOCK+=("无法确定技术栈：缺少 README.md / CLAUDE.md / package.json")
 fi
 
+# ─── 技术规格（PAUSE：缺失时无法自动判断新建 vs 改造）──────────
+TECH_SPEC_FILE=""
+if [ -f "$PROJECT_ROOT/docs/tech-spec.md" ]; then
+  TECH_SPEC_FILE="docs/tech-spec.md"
+elif [ -d "$PROJECT_ROOT/docs" ]; then
+  FOUND=$(grep -rl "路由\|页面列表\|接口\|API\|页面路径" "$PROJECT_ROOT/docs/" 2>/dev/null \
+    | grep "\.md$" | grep -v "问题记录\|issue\|bug\|联调" | head -1)
+  [ -n "$FOUND" ] && TECH_SPEC_FILE="${FOUND#$PROJECT_ROOT/}"
+fi
+
+if [ -z "$TECH_SPEC_FILE" ]; then
+  PAUSE+=("tech-spec：缺失时无法自动判断设计稿对应的是新建页面还是改造现有页面")
+fi
+
 # ─── 组件文档来源（两层兜底）──────────────────────────────────
 COMPONENT_DOC_FILE=""
 
 if [ -f "$PROJECT_ROOT/docs/components.md" ]; then
   COMPONENT_DOC_FILE="docs/components.md"
 elif [ -d "$PROJECT_ROOT/docs" ]; then
-  # 优先：文件名含"组件"或"component"的 .md
   FOUND=$(find "$PROJECT_ROOT/docs" -maxdepth 1 -name "*.md" \
     | grep -i "组件\|component" | head -1)
-  # 兜底：内容含 Props 且排除问题记录类文件
   if [ -z "$FOUND" ]; then
     FOUND=$(grep -rl "Props\|props\|组件\|Component" "$PROJECT_ROOT/docs/" 2>/dev/null \
       | grep "\.md$" | grep -v "问题记录\|issue\|bug\|联调" | head -1)
@@ -77,10 +87,10 @@ elif [ -d "$PROJECT_ROOT/docs" ]; then
 fi
 
 if [ -z "$COMPONENT_DOC_FILE" ]; then
-  PAUSE+=("docs/ 中无任何组件文档")
+  PAUSE+=("component-doc：docs/ 中无任何组件文档，无法复用现有组件")
 fi
 
-# ─── 编码规范来源（宽松，有替代则用替代）────────────────────────
+# ─── 编码规范来源（宽松）────────────────────────────────────────
 DEV_SPEC_FILE=""
 if [ -f "$PROJECT_ROOT/docs/dev-spec.md" ]; then
   DEV_SPEC_FILE="docs/dev-spec.md"
@@ -90,11 +100,6 @@ elif [ -d "$PROJECT_ROOT/docs" ]; then
   [ -n "$FOUND" ] && DEV_SPEC_FILE="${FOUND#$PROJECT_ROOT/}"
 fi
 [ -z "$DEV_SPEC_FILE" ] && WARN+=("dev-spec — 缺失时扫描 src/ 推断编码风格")
-
-# ─── 技术规格来源（宽松）────────────────────────────────────────
-TECH_SPEC_FILE=""
-[ -f "$PROJECT_ROOT/docs/tech-spec.md" ] && TECH_SPEC_FILE="docs/tech-spec.md"
-[ -z "$TECH_SPEC_FILE" ] && WARN+=("tech-spec — 缺失时数据逻辑全部标 TODO")
 
 # ─── 输出 ────────────────────────────────────────────────────────
 echo "=== design-to-code 前置检查 ==="
@@ -110,15 +115,8 @@ fi
 
 if [ ${#PAUSE[@]} -gt 0 ]; then
   echo "STATUS: NEEDS_DECISION"
-  echo "⚠️  docs/ 中无任何组件文档"
-  echo ""
-  echo "影响：code-format 无法复用现有组件，存在重复造轮子风险。"
-  echo ""
-  echo "解决方案："
-  echo "   1. 立即运行 component-doc-gen 生成初稿，审阅后再继续（推荐）"
-  echo "   2. 等待 CI 定时任务生成并合并 MR"
-  echo "   3. 以降级模式继续（接受组件复用质量下降）"
-  echo "   4. 取消"
+  echo "⚠️  以下文档缺失，需要决策后才能继续："
+  for f in "${PAUSE[@]}"; do echo "   - $f"; done
   echo ""
 fi
 

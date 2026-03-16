@@ -15,12 +15,26 @@ metadata:
 
 ## 执行步骤
 
-1. 调用 `lanhu_get_designs` 获取设计图列表，找到匹配的 design_id
-   - 有 URL → 从 URL 中提取项目信息后查列表确认
-   - 只有名称 → 在列表中模糊匹配
-2. 调用 `lanhu_get_ai_analyze_design_result`，等待 status=completed
+1. **判断 URL 是否指向具体页面**
+   - URL 含 `&id=` 或 `&did=` 参数 → 有具体页面，直接取 design_id
+   - URL 只有 `pid=`（项目级）或只提供了名称 → 调用 `lanhu_get_designs` 获取设计图列表，**展示给用户选择**，等用户确认后才继续
+
+   展示格式：
+   ```
+   该项目共有 N 个设计图，请选择要转换的页面：
+   1. 页面名称A
+   2. 页面名称B
+   3. 页面名称C
+   ...
+   请输入序号：
+   ```
+
+2. 用确认的 design_id 调用 `lanhu_get_ai_analyze_design_result`，等待 status=completed（异步，需轮询）
+
 3. 调用 `lanhu_get_design_slices`，下载切图到 `assets/`
+
 4. 保存产物到 `.claude/lanhu-output/<页面名称>/`
+
 5. 返回路径摘要给调用方
 
 ## 输出约定
@@ -43,4 +57,5 @@ metadata:
 
 - `lanhu_get_ai_analyze_design_result` 是异步的，必须等 status=completed 再读
 - design_id 不能猜，必须从 `lanhu_get_designs` 返回值中取
+- 项目级 URL（只有 pid）**不能自动选第一个**，必须展示列表让用户选
 - `lanhu_get_pages` 是 Axure 原型页面接口，不是设计稿，不要混用
