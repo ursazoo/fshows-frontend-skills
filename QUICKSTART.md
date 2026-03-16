@@ -17,37 +17,16 @@
 蓝湖 MCP 让 Claude Code 能直接读取设计稿数据。
 
 ```bash
-# 1. 克隆 MCP 服务
+# 克隆并一键安装（脚本会交互式引导配置 Cookie）
 git clone https://github.com/dsphper/lanhu-mcp ~/.claude/mcp-servers/lanhu-mcp
-
-# 2. 创建 Python 环境并安装依赖
 cd ~/.claude/mcp-servers/lanhu-mcp
-python3.11 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
-
-# 3. 配置 Cookie
-cp .env.example .env
+bash easy-install.sh
 ```
 
-然后获取你的蓝湖 Cookie：
-
-1. 浏览器打开 [lanhuapp.com](https://lanhuapp.com)，登录
-2. 按 F12 打开开发者工具 → Application → Cookies → `lanhuapp.com`
-3. 复制 `_ga`、`lhtoken`、`user_id` 等关键 Cookie 值
-4. 打开 `~/.claude/mcp-servers/lanhu-mcp/.env`，填入 Cookie 字符串：
-
-```
-LANHU_COOKIE=你的完整Cookie字符串
-```
+脚本会自动完成：创建 Python 环境 → 安装依赖 → 引导你获取并填入蓝湖 Cookie。
 
 ```bash
-# 4. 注册 MCP 到 Claude Code（全局）
-cd ~/.claude/mcp-servers/lanhu-mcp
-source venv/bin/activate
-python server.py &   # 启动服务（后台运行）
-
+# 注册 MCP 到 Claude Code（全局）
 claude mcp add lanhu --transport http http://localhost:8000/mcp -s user
 ```
 

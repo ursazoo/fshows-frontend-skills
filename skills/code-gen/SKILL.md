@@ -15,7 +15,9 @@ metadata:
 
 ## 执行步骤
 
-1. 确认 page_id（如只有名称，先调用 `lanhu_get_pages`）
+1. 调用 `lanhu_get_designs` 获取设计图列表，找到匹配的 design_id
+   - 有 URL → 从 URL 中提取项目信息后查列表确认
+   - 只有名称 → 在列表中模糊匹配
 2. 调用 `lanhu_get_ai_analyze_design_result`，等待 status=completed
 3. 调用 `lanhu_get_design_slices`，下载切图到 `assets/`
 4. 保存产物到 `.claude/lanhu-output/<页面名称>/`
@@ -40,4 +42,5 @@ metadata:
 ## 关键陷阱
 
 - `lanhu_get_ai_analyze_design_result` 是异步的，必须等 status=completed 再读
-- page_id 不能猜，必须从 `lanhu_get_pages` 返回值中取
+- design_id 不能猜，必须从 `lanhu_get_designs` 返回值中取
+- `lanhu_get_pages` 是 Axure 原型页面接口，不是设计稿，不要混用
