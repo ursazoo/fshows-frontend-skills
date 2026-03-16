@@ -12,12 +12,16 @@ model: opus
 
 ### 1. 读取上下文（动代码前必须全部读完）
 
-| 文件 | 用途 |
-|------|------|
-| `README.md` | 技术栈（Vue 版本、UI 库） |
-| `docs/components.md` | 可复用组件目录，含 props/用法 |
-| `docs/tech-spec.md` | API 接口、交互逻辑约定 |
-| `docs/dev-spec.md` | 命名规范、文件结构、样式规范 |
+按以下优先级查找每类文档，找到第一个即用，不要重复查找：
+
+| 用途 | 优先 | 兜底顺序 |
+|------|------|---------|
+| 技术栈 | `README.md` | → `CLAUDE.md` → `package.json` |
+| 组件文档 | `docs/components.md` | → `docs/` 下含 "Props"/"组件" 的 .md |
+| 编码规范 | `docs/dev-spec.md` | → `docs/` 下含 "命名规范"/"开发规范" 的 .md → 扫描 `src/` 推断 |
+| 交互逻辑 | `docs/tech-spec.md` | → 无则全部标 TODO |
+
+**调用方（design-to-code）会传入 CONTEXT_FILES，直接使用传入路径，不必自己查找。**
 
 文件缺失时的降级策略见 → `fallback-guide.md`
 

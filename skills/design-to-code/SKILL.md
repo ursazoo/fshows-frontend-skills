@@ -26,22 +26,32 @@ description: 蓝湖设计稿转框架代码，三阶段工作流入口
 
 | exit | STATUS | 行为 |
 |------|--------|------|
-| 1 | BLOCKED | 告知缺失文件，**停止**，等用户补充后重新运行 |
-| 2 | NEEDS_DECISION | 显示脚本输出，**暂停**，询问用户选择降级模式或等待 component-doc-gen |
-| 0 | OK | 直接进入阶段 1 |
+| 1 | BLOCKED | 告知原因，**停止** |
+| 2 | NEEDS_DECISION | 显示脚本输出，**暂停**，按话术询问用户 |
+| 0 | OK | 读取 CONTEXT_FILES，直接进入阶段 1 |
+
+脚本 stdout 包含 `CONTEXT_FILES` 块，格式如下：
+```
+CONTEXT_FILES:
+  TECH_STACK=README.md
+  COMPONENT_DOC=docs/开发规范与组件文档.md
+  DEV_SPEC=docs/开发规范与组件文档.md
+  TECH_SPEC=
+```
+将这些路径传给 code-format，code-format 按此读取，不自行查找。
 
 **NEEDS_DECISION 时的询问话术：**
 ```
-docs/components.md 不存在，有三个选项：
-1. 等待 component-doc-gen CI 生成并合并文档后再转换（推荐）
-2. 以降级模式继续：我会扫描 src/ 目录推断可用组件，
-   但无法保证复用现有组件，生成后请重点 review 组件使用部分
-3. 取消
+docs/ 中没有找到组件文档，有四个选项：
+1. 立即运行 component-doc-gen 生成初稿，我帮你审阅后再继续（推荐）
+2. 等待 CI 定时任务生成并合并 MR 后再转换
+3. 以降级模式继续：扫描 src/ 推断可用组件，生成后请重点 review 组件使用部分
+4. 取消
 
-请选择（1/2/3）：
+请选择（1/2/3/4）：
 ```
 
-选 1 → 停止。选 2 → 继续并在最终摘要中标注"降级模式运行"。选 3 → 退出。
+选 1 → 运行 component-doc-gen，完成后继续。选 2 → 停止。选 3 → 继续并在最终摘要标注"降级模式运行"。选 4 → 退出。
 
 详见 → `workflow-guide.md#文档缺失影响`
 
