@@ -1,0 +1,52 @@
+# component-doc-gen CI Pipeline 模板
+# 复制到项目 .gitlab-ci.yml 或 codeup pipeline 配置中
+#
+# 前提：
+# 1. 在 CI 环境变量中配置 ANTHROPIC_API_KEY 或代理对应的 key
+# 2. 安装 claude CLI：npm install -g @anthropic-ai/claude-code
+
+component-doc-gen:
+  # 定时触发：每周一凌晨 2 点
+  only:
+    - schedules
+  # 也可手动触发
+  when: manual
+
+  variables:
+    PROJECT_ROOT: "."
+    BRANCH_NAME: "docs/component-doc-gen-$(date +%Y%m%d)"
+
+  script:
+    # 1. 运行 component-doc-gen skill
+    - |
+      claude --allowedTools "Read,Write,Glob,Bash" -p "
+        运行 component-doc-gen skill：
+        1. 执行 bash ~/.claude/skills/component-doc-gen/scripts/detect-components.sh $PROJECT_ROOT
+        2. 读取每个组件文件，提取 props/emits
+        3. 按 ~/.claude/skills/component-doc-gen/output-format.md 格式生成 docs/components.md
+      "
+
+    # 2. 检查是否有变更
+    - |
+      if git diff --quiet docs/components.md 2>/dev/null && \
+         [ -f docs/components.md ]; then
+        echo "docs/components.md 无变更，跳过 MR 创建"
+        exit 0
+      fi
+
+    # 3. 提交并创建 MR
+    - git config user.email "ci@component-doc-gen"
+    - git config user.name "component-doc-gen CI"
+    - git checkout -b "$BRANCH_NAME"
+    - git add docs/components.md
+    - git commit -m "docs: 自动更新组件文档 [component-doc-gen]"
+    - git push origin "$BRANCH_NAME"
+
+    # GitLab：创建 MR（需要 GITLAB_TOKEN）
+    - |
+      curl --request POST \
+        --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+        --data "source_branch=$BRANCH_NAME&target_branch=main&title=docs: 自动更新组件文档 $(date +%Y-%m-%d)&description=由 component-doc-gen CI 自动生成，请审阅 props 用法后合并" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests"
+
+  # Codeup 用户：将上方 GitLab MR 命令替换为对应的 Codeup API
