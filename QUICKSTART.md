@@ -65,7 +65,7 @@ bash ~/.claude/mcp-servers/lanhu-mcp/start.sh &
 
 ```bash
 # 克隆仓库
-git clone https://github.com/fshows/fshows-frontend-skills ~/fshows-frontend-skills
+git clone https://github.com/ursazoo/fshows-frontend-skills ~/fshows-frontend-skills
 
 # 一键安装（软链接到 ~/.claude/skills/）
 bash ~/fshows-frontend-skills/install.sh
