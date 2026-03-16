@@ -62,9 +62,14 @@ COMPONENT_DOC_FILE=""
 if [ -f "$PROJECT_ROOT/docs/components.md" ]; then
   COMPONENT_DOC_FILE="docs/components.md"
 elif [ -d "$PROJECT_ROOT/docs" ]; then
-  # 扫描 docs/ 下含组件说明的 .md 文件
-  FOUND=$(grep -rl "Props\|props\|组件\|Component" "$PROJECT_ROOT/docs/" 2>/dev/null \
-    | grep "\.md$" | head -1)
+  # 优先：文件名含"组件"或"component"的 .md
+  FOUND=$(find "$PROJECT_ROOT/docs" -maxdepth 1 -name "*.md" \
+    | grep -i "组件\|component" | head -1)
+  # 兜底：内容含 Props 且排除问题记录类文件
+  if [ -z "$FOUND" ]; then
+    FOUND=$(grep -rl "Props\|props\|组件\|Component" "$PROJECT_ROOT/docs/" 2>/dev/null \
+      | grep "\.md$" | grep -v "问题记录\|issue\|bug\|联调" | head -1)
+  fi
   if [ -n "$FOUND" ]; then
     COMPONENT_DOC_FILE="${FOUND#$PROJECT_ROOT/}"
     WARN+=("docs/components.md 不存在，将使用 $COMPONENT_DOC_FILE 作为组件参考")
